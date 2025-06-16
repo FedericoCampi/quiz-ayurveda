@@ -11,25 +11,9 @@ import { gunaDescriptions } from "@/assets/quiz.data"
 import { questions } from "@/assets/questions_with_scoring_template"
 
 export default function AyurvedaQuiz() {
-  const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<number[]>([])
-  const [selectedOption, setSelectedOption] = useState<number | null>(null)
   const [showResults, setShowResults] = useState(false)
   const [results, setResults] = useState({ sattva: 0, rajas: 0, tamas: 0 })
-
-  const handleAnswer = () => {
-    if (selectedOption === null) return
-
-    const newAnswers = [...answers, selectedOption]
-    setAnswers(newAnswers)
-    setSelectedOption(null)
-
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
-    } else {
-      calculateResults(newAnswers)
-    }
-  }
 
   const calculateResults = (allAnswers: number[]) => {
     let totalSattva = 0
@@ -53,9 +37,7 @@ export default function AyurvedaQuiz() {
   }
 
   const resetQuiz = () => {
-    setCurrentQuestion(0)
     setAnswers([])
-    setSelectedOption(null)
     setShowResults(false)
     setResults({ sattva: 0, rajas: 0, tamas: 0 })
   }
