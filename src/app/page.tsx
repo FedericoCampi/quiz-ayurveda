@@ -1,103 +1,217 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { Leaf, Zap, Brain, RotateCcw } from "lucide-react"
+import { gunaDescriptions } from "@/assets/quiz.data"
+import { questions } from "@/assets/questions_with_scoring_template"
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default function AyurvedaQuiz() {
+  const [currentQuestion, setCurrentQuestion] = useState(0)
+  const [answers, setAnswers] = useState<number[]>([])
+  const [selectedOption, setSelectedOption] = useState<number | null>(null)
+  const [showResults, setShowResults] = useState(false)
+  const [results, setResults] = useState({ sattva: 0, rajas: 0, tamas: 0 })
+
+  const handleAnswer = () => {
+    if (selectedOption === null) return
+
+    const newAnswers = [...answers, selectedOption]
+    setAnswers(newAnswers)
+    setSelectedOption(null)
+
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1)
+    } else {
+      calculateResults(newAnswers)
+    }
+  }
+
+  const calculateResults = (allAnswers: number[]) => {
+    let totalSattva = 0
+    let totalRajas = 0
+    let totalTamas = 0
+
+    allAnswers.forEach((answerIndex, questionIndex) => {
+      const option = questions[questionIndex].options[answerIndex]
+      totalSattva += option.sattva
+      totalRajas += option.rajas
+      totalTamas += option.tamas
+    })
+
+    const total = totalSattva + totalRajas + totalTamas
+    const sattvaPct = Math.round((totalSattva / total) * 100)
+    const rajasPct = Math.round((totalRajas / total) * 100)
+    const tamasPct = Math.round((totalTamas / total) * 100)
+
+    setResults({ sattva: sattvaPct, rajas: rajasPct, tamas: tamasPct })
+    setShowResults(true)
+  }
+
+  const resetQuiz = () => {
+    setCurrentQuestion(0)
+    setAnswers([])
+    setSelectedOption(null)
+    setShowResults(false)
+    setResults({ sattva: 0, rajas: 0, tamas: 0 })
+  }
+
+  const getDominantGuna = () => {
+    const { sattva, rajas, tamas } = results
+    if (sattva >= rajas && sattva >= tamas) return "sattva"
+    if (rajas >= tamas) return "rajas"
+    return "tamas"
+  }
+
+  const getGunaDescription = (guna: string) => {
+    return gunaDescriptions[guna as keyof typeof gunaDescriptions] ?? {
+      title: "",
+      description: "",
+      recommendations: ""
+    }
+  }
+
+
+  if (showResults) {
+    const dominantGuna = getDominantGuna()
+    const gunaInfo = getGunaDescription(dominantGuna)
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <Card className="mb-8">
+            <CardHeader className="text-center">
+              <CardTitle className="text-3xl font-bold text-gray-800 mb-2">Tu Perfil Ayurvédico</CardTitle>
+              <CardDescription className="text-lg">Aquí están los resultados de tu evaluación de gunas</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Resultados de Sattva */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Leaf className="h-5 w-5 text-green-600" />
+                    <span className="font-semibold text-green-700">Sattva</span>
+                  </div>
+                  <span className="font-bold text-green-700">{results.sattva}%</span>
+                </div>
+                <Progress value={results.sattva} className="h-3" />
+              </div>
+
+              {/* Resultados de Rajas */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-red-600" />
+                    <span className="font-semibold text-red-700">Rajas</span>
+                  </div>
+                  <span className="font-bold text-red-700">{results.rajas}%</span>
+                </div>
+                <Progress value={results.rajas} className="h-3" />
+              </div>
+
+              {/* Resultados de Tamas */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Brain className="h-5 w-5 text-gray-600" />
+                    <span className="font-semibold text-gray-700">Tamas</span>
+                  </div>
+                  <span className="font-bold text-gray-700">{results.tamas}%</span>
+                </div>
+                <Progress value={results.tamas} className="h-3" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Interpretación */}
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-gray-800">{gunaInfo.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-700 leading-relaxed">{gunaInfo.description}</p>
+              <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
+                <h4 className="font-semibold text-blue-800 mb-2">Recomendaciones:</h4>
+                <p className="text-blue-700">{gunaInfo.recommendations}</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="text-center">
+            <Button onClick={resetQuiz} className="bg-orange-600 hover:bg-orange-700">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Realizar Cuestionario Nuevamente
+            </Button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+    )
+  }
+
+  return (
+  <div className="min-h-screen bg-gradient-to-br from-orange-50 via-yellow-50 to-green-50 p-4">
+    <div className="max-w-4xl mx-auto">
+      <Card className="mb-6">
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl font-bold text-gray-800">Cuestionario Ayurvédico</CardTitle>
+          <CardDescription>Descubre tu perfil de gunas (Sattva, Rajas, Tamas)</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              calculateResults(answers)
+            }}
+            className="space-y-4"
+          >
+            {questions.map((question, qIndex) => (
+              <div key={qIndex} className="space-y-2">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  {`Pregunta ${qIndex + 1}: ${question.question}`}
+                </h3>
+                <RadioGroup
+                  value={answers[qIndex]?.toString() ?? ""}
+                  onValueChange={(value) => {
+                    const updatedAnswers = [...answers]
+                    updatedAnswers[qIndex] = parseInt(value)
+                    setAnswers(updatedAnswers)
+                  }}
+                  className="space-y-3"
+                >
+                  {question.options.map((option, oIndex) => (
+                    <div
+                      key={oIndex}
+                      className={`mb-0 flex items-center space-x-3 p-4 rounded-lg border-2 transition-all cursor-pointer hover:bg-orange-50 ${
+                        answers[qIndex] === oIndex ? "border-orange-400 bg-orange-50" : "border-gray-200"
+                      }`}
+                      onClick={() => {
+                        const updatedAnswers = [...answers]
+                        updatedAnswers[qIndex] = oIndex
+                        setAnswers(updatedAnswers)
+                      }}
+                    >
+                      <RadioGroupItem value={oIndex.toString()} id={`q${qIndex}-opt${oIndex}`} />
+                      <Label htmlFor={`q${qIndex}-opt${oIndex}`} className="flex-1 cursor-pointer text-gray-700">
+                        {option.text}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            ))}
+
+            <Button type="submit" className="w-full bg-orange-600 hover:bg-orange-700">
+              Ver Resultados
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
-  );
+  </div>
+)
+
 }
